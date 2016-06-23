@@ -1,0 +1,86 @@
+<html>
+ <head>
+  <meta charset="utf-8">
+  <title>Observables and SVG Lissajous Spiral</title>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/rxjs/4.1.0/rx.js">
+  </script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/rxjs/4.1.0/rx.async.js">
+  </script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/rxjs/4.1.0/rx.time.js">
+  </script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js">
+  </script>
+ </head>
+
+ <body>
+  <div id="outer1">
+    <svg width="800" height="500" id="svg1" />
+  </div>
+
+  <script>
+    window.onload = function(evt) {
+      var basePointX    = 250,  basePointY    = 200;
+      var currentX      = 0,    currentY      = 0;
+      var offsetX       = 0,    offsetY       = 0;
+      var minorAxis     = 60,   majorAxis     = 30;
+      var radius        = 0,    spiralCount   = 4;
+      var A             = 200,  B             = 2;
+      var C             = 100,  D             = 5;
+      var maxAngle      = 720,  angleDelta    = 2;
+      var strokeWidth   = 1,    yIndex        = 0;
+      var XPoints       = [],   YPoints       = [];
+  
+      var colors  = ["#FF0000", "#FFFF00"];
+      var colors2 = ["#0000FF", "#FFFF00"];
+      var color   = colors[0], colorIndex = 0;
+      var svgNS   = "http://www.w3.org/2000/svg";
+      var svg     = document.querySelector("#svg1");
+
+      var svgDocument = document.getElementById("svg1").ownerDocument;
+
+      for(angle=0; angle<=maxAngle; angle+=angleDelta) { 
+         offsetX  = A*Math.sin(B*angle*Math.PI/180);
+         offsetY  = C*Math.cos(D*angle*Math.PI/180);
+         currentX = basePointX+offsetX;
+         currentY = basePointY-offsetY;
+         XPoints.push(currentX);
+         YPoints.push(currentY);
+      }
+
+      var delay = Rx.Observable.empty().delay(20);
+      var items = Rx.Observable.fromArray(XPoints)
+                    .map(function (x) {
+                      return Rx.Observable.return(x).concat(delay); 
+                    })
+                    .concatAll();
+
+    //Rx.Observable.from(XPoints)
+    //  .subscribe(x => {
+      items.subscribe(x => {
+          // create an SVG graphics element: 
+          var elem = svgDocument.createElementNS(svgNS, "ellipse");
+          elem.setAttribute("fill", colors[(colorIndex++)%colors.length]);
+          elem.setAttribute("cx", x);
+          elem.setAttribute("cy", YPoints[yIndex]);
+          elem.setAttribute("rx", majorAxis);
+          elem.setAttribute("ry", minorAxis);
+
+          // append the SVG element to the <svg> element: 
+          $("#svg1").append(elem);
+
+          // create another SVG graphics element: 
+          var elem2 = svgDocument.createElementNS(svgNS, "ellipse");
+          elem2.setAttribute("fill", colors2[(colorIndex)%colors2.length]);
+          elem2.setAttribute("cx", x+majorAxis);
+          elem2.setAttribute("cy", YPoints[yIndex++]);
+          elem2.setAttribute("rx", majorAxis);
+          elem2.setAttribute("ry", minorAxis);
+
+          // append the SVG element to the <svg> element: 
+          $("#svg1").append(elem2);
+        });
+    }
+  </script>
+ </body>
+</html>
+
